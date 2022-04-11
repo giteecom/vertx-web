@@ -49,7 +49,7 @@ public abstract class SockJSSocketBase implements SockJSSocket {
 
   private final MessageConsumer<Object> registration;
   protected final Vertx vertx;
-  protected RoutingContext routingContext;
+  protected final RoutingContext routingContext;
 
   /**
    * When a {@code SockJSSocket} is created it automatically registers an event handler with the event bus, the ID of that
@@ -97,22 +97,19 @@ public abstract class SockJSSocketBase implements SockJSSocket {
 
   @Override
   public Future<Void> end() {
+    Promise<Void> promise = ((VertxInternal) vertx).promise();
     if (registration != null) {
-      Promise<Void> promise = ((VertxInternal) vertx).promise();
       registration.unregister(promise);
-      return promise.future();
     } else {
-      return Future.succeededFuture();
+      promise.complete();
     }
+    return promise.future();
   }
 
   @Override
   public void end(Handler<AsyncResult<Void>> handler) {
-    if (registration != null) {
-      registration.unregister(handler);
-    } else {
-      handler.handle(Future.succeededFuture());
-    }
+    end()
+      .onComplete(handler);
   }
 
   @Override
